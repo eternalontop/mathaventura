@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Aventura: App de Matemáticas con Temas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Configuraciones de Tailwind y Paleta - COLORES REVISADOS */
+        :root {
+            --phone-width: 350px;
+            --phone-height: 700px;
+            
+            /* Colores de Fondo Exterior e Interior */
+            --light-bg-outside: #e0f2f1; /* Verde Menta Claro */
+            --dark-bg-outside: #161a29; /* Azul Oscuro Casi Negro */
+            --light-bg-inside: #ffffff;
+            --dark-bg-inside: #1f2738; /* Azul Grisáceo Oscuro */
+            
+            /* Colores de Texto */
+            --light-text-color: #1a202c;
+            --dark-text-color: #e2e8f0;
+
+            /* Paleta Math Aventura (Con Variaciones) */
+            --mk-red: #dc2626; /* Rojo Fuerte (600) */
+            --mk-red-dark: #b91c1c; /* Rojo Oscuro (700) */
+            --mk-yellow: #f59e0b; /* Amarillo Brillante (500) */
+            --mk-yellow-light: #fcd34d; /* Amarillo Claro (300) */
+            --mk-blue: #2563eb; /* Azul Vibrante (600) */
+            --mk-blue-dark: #1e40af; /* Azul Oscuro (800) */
+            
+            /* Colores de operaciones */
+            --op-suma: #10b981; /* Esmeralda/Verde */
+            --op-resta: #f97316; /* Naranja */
+            --op-multiplicacion: #8b5cf6; /* Violeta */
+            --op-division: #06b6d4; /* Cian */
+        }
+
+        body {
+            background-color: var(--light-bg-outside);
+            color: var(--light-text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body.dark-mode {
+            background-color: var(--dark-bg-outside);
+            color: var(--dark-text-color);
+        }
+
+        /* Estilos del marco del teléfono */
+        .phone-frame {
+            width: var(--phone-width);
+            height: var(--phone-height);
+            border: 12px solid var(--light-text-color);
+            border-radius: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            background-color: var(--light-bg-inside);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        .phone-frame.dark-mode {
+            border-color: var(--dark-text-color);
+            background-color: var(--dark-bg-inside);
+        }
+        /* Estilo de la muesca */
+        .phone-notch {
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 100px; height: 25px; background: var(--light-text-color);
+            border-radius: 0 0 15px 15px; z-index: 30;
+            transition: background-color 0.3s ease;
+        }
+        .phone-frame.dark-mode .phone-notch {
+            background: var(--dark-text-color);
+        }
+
+        /* Barra de Estado */
+        .status-bar-content {
+            color: var(--light-text-color);
+            transition: color 0.3s ease;
+        }
+        .phone-frame.dark-mode .status-bar-content {
+            color: var(--dark-text-color);
+        }
+        .phone-frame.dark-mode .status-bar-content i {
+            stroke: var(--dark-text-color);
+        }
+        .phone-frame.dark-mode .status-bar-content .border-gray-800 {
+            border-color: var(--dark-text-color);
+        }
+        .phone-frame.dark-mode .status-bar-content .bg-gray-800 {
+            background-color: var(--dark-text-color);
+        }
+        .app-name { 
+            color: var(--light-text-color); 
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+            transition: color 0.3s ease;
+        }
+        .phone-frame.dark-mode .app-name { 
+            color: var(--dark-text-color); 
+            text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+        }
+        
+        /* Vistas y Botones */
+        .app-view {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: none; flex-direction: column; padding: 20px; text-align: center;
+            z-index: 20;
+            background-color: var(--light-bg-inside);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .app-view.dark-mode {
+            background-color: var(--dark-bg-inside);
+            color: var(--dark-text-color);
+        }
+        
+        .mk-btn {
+            width: 100%; max-width: 20rem; padding: 0.75rem 1.5rem; border-radius: 0.75rem;
+            font-weight: 700; font-size: 1.125rem; margin-bottom: 1rem;
+            box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.3); transition: all 200ms ease-in-out; 
+            letter-spacing: 0.05em;
+        }
+        .mk-btn:active { transform: scale(0.98); }
+        .mk-btn-blue { 
+            background-color: var(--mk-blue); 
+            color: white; 
+            border: 2px solid var(--mk-blue-dark);
+        }
+        .mk-btn-yellow { 
+            background-color: var(--mk-yellow); 
+            color: var(--light-text-color); 
+            border: 2px solid #d97706; /* Darker yellow for border */
+        }
+        .app-view.dark-mode .mk-btn-yellow { 
+            color: var(--dark-bg-outside); 
+        }
+        .btn-exit {
+            position: absolute; top: 20px; right: 20px; background-color: var(--mk-red);
+            color: white; padding: 8px 15px; border-radius: 10px; font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2); cursor: pointer; z-index: 25;
+            transition: background-color 0.2s;
+        }
+        .btn-exit:hover { background-color: var(--mk-red-dark); }
+
+        /* Tarjetas de Operación y Tema */
+        .op-card, .topic-card {
+            border-radius: 1rem; padding: 1rem; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            transition: transform 0.2s; cursor: pointer; color: white;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            height: 120px; margin-bottom: 1rem;
+            border-bottom: 5px solid rgba(0, 0, 0, 0.2); /* Sombra 3D */
+        }
+        .op-card:hover, .topic-card:hover { transform: translateY(-3px); }
+        .op-title { font-size: 1.5rem; font-weight: 800; text-shadow: 1px 1px 3px rgba(0,0,0,0.5); }
+        
+        .op-card i, .topic-card i {
+            stroke-width: 3;
+        }
+
+        /* Estilos de la Pantalla de Juego */
+        #game-screen { justify-content: space-between; padding-top: 80px; padding-bottom: 20px; }
+        .problem-text { 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+            margin: 20px 0; 
+            color: var(--mk-blue);
+            text-shadow: 2px 2px 0px var(--mk-blue-dark);
+            transition: color 0.3s;
+        }
+        .app-view.dark-mode .problem-text {
+            color: var(--mk-yellow-light);
+            text-shadow: 2px 2px 0px var(--mk-yellow);
+        }
+        .answer-input {
+            width: 80%; max-width: 250px; padding: 12px 20px; font-size: 2rem;
+            text-align: center; border-radius: 12px; border: 4px solid var(--mk-yellow);
+            outline: none; transition: border-color 0.2s;
+            background-color: white; color: var(--light-text-color);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .app-view.dark-mode .answer-input {
+            background-color: var(--dark-bg-inside);
+            color: var(--dark-text-color);
+        }
+        
+        /* Mensaje Temporal */
+        #temp-message-box {
+            background-color: var(--mk-red);
+        }
+
+        /* MODAL DE RESULTADOS (SOLUCIÓN) */
+        .modal-overlay {
+            position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex; 
+            justify-content: center; align-items: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            width: 85%;
+            max-width: 300px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s ease;
+            /* La clase dark-mode se usa para alternar los colores */
+            border: 3px solid var(--mk-blue);
+        }
+        .modal-content.dark-mode {
+            background-color: var(--dark-bg-inside);
+            border-color: var(--mk-yellow);
+        }
+        .star-rating i.filled {
+            fill: var(--mk-yellow); stroke: var(--mk-yellow);
+        }
+
+        /* Estilo de los iconos de otras apps */
+        .app-icon-deco {
+            width: 4rem; height: 4rem; border-radius: 1rem;
+            display: flex; justify-content: center; align-items: center;
+            mb-1
+        };
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 font-sans relative">
+
+    <button id="theme-toggle" class="absolute top-4 right-4 p-3 rounded-full bg-gray-200 dark:bg-gray-700 shadow-md flex items-center justify-center z-50 transition duration-300">
+        <i data-lucide="sun" class="w-6 h-6 text-yellow-600 dark:text-yellow-400 theme-icon light-icon"></i>
+        <i data-lucide="moon" class="w-6 h-6 text-blue-800 dark:text-blue-200 theme-icon dark-icon hidden"></i>
+    </button>
+    
+    <div class="flex items-center justify-center gap-8">
+        <div class="phone-frame light-mode" id="phone-container">
+
+            <div class="phone-notch light-mode">
+                </div>
+            <div class="relative z-20 px-6 pt-8 flex justify-between items-center text-gray-800 text-sm status-bar-content">
+                <span id="current-time" class="status-time font-semibold">9:41</span>
+                <div class="flex items-center space-x-1">
+                    <i data-lucide="signal-high" class="w-4 h-4" style="stroke-width:3;"></i>
+                    <i data-lucide="wifi" class="w-4 h-4" style="stroke-width:3;"></i>
+                    <div class="border border-gray-800 rounded-md w-6 h-3 flex items-center p-[1px]">
+                        <div class="bg-gray-800 h-full rounded-[1px] w-3/4"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="app-desktop" class="p-6 pt-10 grid grid-cols-4 gap-y-6" style="display: grid;">
+                
+                <div class="app-icon flex flex-col items-center" onclick="showView('home');">
+                    <img src="https://i.pinimg.com/736x/42/6d/2e/426d2edad3b21d83175821a1399521ba.jpg" alt="Logo Math Aventura" class="w-16 h-16 rounded-xl mb-1 object-cover">
+                    <span class="app-name text-xs">Math Aventura</span>
+                </div>
+
+                <div class="app-icon flex flex-col items-center">
+                    <div class="app-icon-deco" style="background-color: #1877F2; color: white;">
+                        <i data-lucide="facebook" class="w-8 h-8"></i>
+                    </div>
+                    <span class="app-name text-xs">Facebook</span>
+                </div>
+                
+                <div class="app-icon flex flex-col items-center">
+                    <div class="app-icon-deco bg-black" style="color: white;">
+                        <i data-lucide="car" class="w-8 h-8"></i>
+                    </div>
+                    <span class="app-name text-xs">Uber</span>
+                </div>
+                
+                <div class="app-icon flex flex-col items-center">
+                    <div class="app-icon-deco" style="background-color: #e5e7eb; color: #4b5563;">
+                        <i data-lucide="camera" class="w-8 h-8"></i>
+                    </div>
+                    <span class="app-name text-xs">Cámara</span>
+                </div>
+                
+                <div class="app-icon flex flex-col items-center">
+                    <div class="app-icon-deco" style="background-color: #00FF34; color: black;">
+                        <i data-lucide="monitor" class="w-8 h-8"></i>
+                    </div>
+                    <span class="app-name text-xs">Kick</span>
+                </div>
+
+            </div>
+            
+            <div id="math-aventura-home-screen" class="app-view light-mode justify-center items-center">
+                <button class="btn-exit" onclick="hideMathAventuraScreen(); return false;">Salir</button>
+                <img src="https://i.pinimg.com/736x/42/6d/2e/426d2edad3b21d83175821a1399521ba.jpg" alt="Logo Math Aventura" class="mb-5 w-24 h-24 rounded-2xl object-cover shadow-xl">
+                <h1 class="text-4xl font-extrabold mb-10 tracking-wider">MATH AVENTURA</h1>
+                
+                <button class="mk-btn mk-btn-blue" onclick="showView('operation-selection');">Iniciar Juego</button>
+                <button class="mk-btn mk-btn-yellow" onclick="showView('credits');">Créditos</button>
+            </div>
+            
+            <div id="operation-selection-screen" class="app-view light-mode justify-start items-center p-6">
+                
+                <button class="btn-exit" onclick="showView('home'); return false;">Regresar</button>
+                
+                <h2 class="text-3xl font-extrabold mb-8 mt-10 tracking-wide" style="color: var(--mk-red-dark);">Elige una Operación</h2>
+                
+                <div class="grid grid-cols-2 gap-4 w-full max-w-sm">
+                    
+                    <div id="card-suma" class="op-card" style="background-color: var(--op-suma);" onclick="selectOperation('SUMA');">
+                        <i data-lucide="plus" class="w-8 h-8"></i>
+                        <span class="op-title">Suma</span>
+                    </div>
+
+                    <div id="card-resta" class="op-card" style="background-color: var(--op-resta);" onclick="selectOperation('RESTA');">
+                        <i data-lucide="minus" class="w-8 h-8"></i>
+                        <span class="op-title">Resta</span>
+                    </div>
+
+                    <div id="card-multiplicacion" class="op-card" style="background-color: var(--op-multiplicacion);" onclick="selectOperation('MULTIPLICACION');">
+                        <i data-lucide="x" class="w-8 h-8"></i>
+                        <span class="op-title">Multiplicación</span>
+                    </div>
+                    
+                    <div id="card-division" class="op-card" style="background-color: var(--op-division);" onclick="selectOperation('DIVISION');">
+                        <i data-lucide="divide" class="w-8 h-8"></i>
+                        <span class="op-title">División</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div id="topic-selection-screen" class="app-view light-mode justify-start items-center p-6">
+                
+                <button class="btn-exit" onclick="showView('operation-selection'); return false;">Regresar</button>
+                
+                <h2 class="text-3xl font-extrabold mb-8 mt-10 tracking-wide" id="topic-screen-title" style="color: var(--mk-blue);">Temas</h2>
+                
+                <div id="topics-list" class="w-full max-w-sm"></div>
+
+            </div>
+            
+            <div id="game-screen" class="app-view light-mode justify-center items-center">
+                
+                <button class="btn-exit" onclick="stopGame(true); return false;">Detener</button>
+
+                <div class="game-status w-full h-fit flex justify-between items-center px-2 mb-4">
+                    <span id="game-op-title" class="text-lg font-bold" style="color: var(--mk-blue);">Operación - Tema</span>
+                    <span id="timer-display" class="text-xl font-extrabold" style="color: var(--mk-red);">0.00s</span>
+                </div>
+                
+                <div class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-6">
+                    <div id="progress-bar" class="h-full bg-yellow-500 transition-all duration-300 ease-linear" style="width: 0%;"></div>
+                </div>
+
+                <div class="problem-container flex-grow flex flex-col justify-center items-center w-full">
+                    <p class="text-xl font-medium mb-4 text-gray-700 dark:text-gray-300">Problema <span id="current-problem-number" class="font-bold">0</span> de <span id="total-problems" class="font-bold">0</span></p>
+                    
+                    <div class="problem-text" id="math-problem">¡Problema!</div>
+                    
+                    <input type="number" id="answer-input" class="answer-input" placeholder="Respuesta" inputmode="numeric">
+                    
+                    <button class="mk-btn mk-btn-blue mt-4" style="max-width: 150px;" onclick="checkAnswer();">Comprobar</button>
+                </div>
+            </div>
+
+            <div id="math-aventura-credits-screen" class="app-view light-mode justify-start pt-10 overflow-y-auto">
+                <button class="btn-exit" onclick="showView('operation-selection'); return false;">Regresar</button>
+                <div id="credits-content" class="w-full pb-12">
+                    <h1 class="text-3xl font-extrabold mb-6 text-center w-full" style="color: var(--mk-blue);">Cargando Créditos...</h1>
+                </div>
+            </div>
+            
+            <div id="results-modal" class="modal-overlay hidden">
+                <div class="modal-content text-center light-mode" id="results-modal-content">
+                    <h2 class="text-2xl font-bold mb-4" style="color: var(--mk-blue);">¡Juego Terminado!</h2>
+                    
+                    <div class="star-rating flex justify-center space-x-2 mb-6" id="star-rating-display">
+                        <i data-lucide="star"></i><i data-lucide="star"></i><i data-lucide="star"></i>
+                    </div>
+                    
+                    <p class="text-xl font-bold mb-3">Tiempo Total: <span id="final-time" class="text-gray-700 dark:text-gray-200">0.00s</span></p>
+                    <p class="text-lg mb-6">Respuestas Correctas: <span id="correct-answers" class="text-gray-700 dark:text-gray-200">0</span> de <span id="total-problems-modal">0</span></p>
+
+                    <button class="mk-btn mk-btn-yellow mt-4" onclick="closeResultsModal();">Volver a Temas</button>
+                </div>
+            </div>
+            
+            <div id="temp-message-box" class="text-white hidden"></div>
+
+            <div class="absolute bottom-4 left-0 right-0 flex justify-center">
+                <div class="w-32 h-1 bg-gray-500 rounded-full"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+
+        // --- 2. DATOS CARGADOS DIRECTAMENTE EN EL CÓDIGO (JSON Incrustado) ---
+        const PROBLEMS_JSON = {
+            "SUMA": {
+                "Sumas Simples": [
+                    { "problem": "5 + 7", "answer": 12 },
+                    { "problem": "8 + 4", "answer": 12 },
+                    { "problem": "9 + 3", "answer": 12 },
+                    { "problem": "6 + 5", "answer": 11 },
+                    { "problem": "7 + 7", "answer": 14 }
+                ],
+                "Sumas de Dos Cifras": [
+                    { "problem": "20 + 13", "answer": 33 },
+                    { "problem": "45 + 22", "answer": 67 },
+                    { "problem": "61 + 17", "answer": 78 },
+                    { "problem": "33 + 33", "answer": 66 },
+                    { "problem": "50 + 41", "answer": 91 }
+                ],
+                "Sumas Llevando": [
+                    { "problem": "19 + 8", "answer": 27 },
+                    { "problem": "25 + 17", "answer": 42 },
+                    { "problem": "48 + 36", "answer": 84 },
+                    { "problem": "57 + 29", "answer": 86 },
+                    { "problem": "65 + 35", "answer": 100 }
+                ]
+            },
+            "RESTA": {
+                "Restas Simples": [
+                    { "problem": "9 - 3", "answer": 6 },
+                    { "problem": "10 - 7", "answer": 3 },
+                    { "problem": "8 - 4", "answer": 4 },
+                    { "problem": "12 - 5", "answer": 7 },
+                    { "problem": "15 - 6", "answer": 9 }
+                ],
+                "Restas de Dos Cifras": [
+                    { "problem": "25 - 11", "answer": 14 },
+                    { "problem": "50 - 20", "answer": 30 },
+                    { "problem": "88 - 44", "answer": 44 },
+                    { "problem": "99 - 18", "answer": 81 },
+                    { "problem": "67 - 35", "answer": 32 }
+                ],
+                "Restas Prestando": [
+                    { "problem": "21 - 9", "answer": 12 },
+                    { "problem": "34 - 17", "answer": 17 },
+                    { "problem": "50 - 22", "answer": 28 },
+                    { "problem": "63 - 45", "answer": 18 },
+                    { "problem": "92 - 38", "answer": 54 }
+                ]
+            },
+            "MULTIPLICACION": {
+                "Tablas Fáciles (2, 5, 10)": [
+                    { "problem": "2 x 7", "answer": 14 },
+                    { "problem": "5 x 5", "answer": 25 },
+                    { "problem": "10 x 8", "answer": 80 },
+                    { "problem": "5 x 9", "answer": 45 },
+                    { "problem": "2 x 6", "answer": 12 }
+                ],
+                "Tablas Medias (3, 4, 6)": [
+                    { "problem": "3 x 7", "answer": 21 },
+                    { "problem": "4 x 8", "answer": 32 },
+                    { "problem": "6 x 6", "answer": 36 },
+                    { "problem": "4 x 9", "answer": 36 },
+                    { "problem": "6 x 8", "answer": 48 }
+                ],
+                "Tablas Difíciles (7, 8, 9)": [
+                    { "problem": "7 x 7", "answer": 49 },
+                    { "problem": "8 x 9", "answer": 72 },
+                    { "problem": "9 x 9", "answer": 81 },
+                    { "problem": "7 x 8", "answer": 56 },
+                    { "problem": "9 x 6", "answer": 54 }
+                ]
+            },
+            "DIVISION": {
+                "Divisiones Exactas (Básicas)": [
+                    { "problem": "10 / 2", "answer": 5 },
+                    { "problem": "20 / 5", "answer": 4 },
+                    { "problem": "30 / 10", "answer": 3 },
+                    { "problem": "16 / 4", "answer": 4 },
+                    { "problem": "9 / 3", "answer": 3 }
+                ],
+                "Divisiones Exactas (Medias)": [
+                    { "problem": "24 / 6", "answer": 4 },
+                    { "problem": "35 / 7", "answer": 5 },
+                    { "problem": "42 / 6", "answer": 7 },
+                    { "problem": "48 / 8", "answer": 6 },
+                    { "problem": "50 / 5", "answer": 10 }
+                ],
+                "Divisiones (Tablas Altas)": [
+                    { "problem": "49 / 7", "answer": 7 },
+                    { "problem": "64 / 8", "answer": 8 },
+                    { "problem": "81 / 9", "answer": 9 },
+                    { "problem": "72 / 9", "answer": 8 },
+                    { "problem": "63 / 7", "answer": 9 }
+                ]
+            }
+        };
+
+        const TEMAS_JSON = {
+            "SUMA": {
+                "Sumas Simples": { "difficulty": "Fácil", "icon": "plus" },
+                "Sumas de Dos Cifras": { "difficulty": "Medio", "icon": "grip" },
+                "Sumas Llevando": { "difficulty": "Difícil", "icon": "trending-up" }
+            },
+            "RESTA": {
+                "Restas Simples": { "difficulty": "Fácil", "icon": "minus" },
+                "Restas de Dos Cifras": { "difficulty": "Medio", "icon": "grip" },
+                "Restas Prestando": { "difficulty": "Difícil", "icon": "trending-down" }
+            },
+            "MULTIPLICACION": {
+                "Tablas Fáciles (2, 5, 10)": { "difficulty": "Fácil", "icon": "x" },
+                "Tablas Medias (3, 4, 6)": { "difficulty": "Medio", "icon": "asterisk" },
+                "Tablas Difíciles (7, 8, 9)": { "difficulty": "Difícil", "icon": "hash" }
+            },
+            "DIVISION": {
+                "Divisiones Exactas (Básicas)": { "difficulty": "Fácil", "icon": "divide" },
+                "Divisiones Exactas (Medias)": { "difficulty": "Medio", "icon": "percent" },
+                "Divisiones (Tablas Altas)": { "difficulty": "Difícil", "icon": "ratio" }
+            }
+        };
+
+        const CREDITS_JSON = {
+            "title": "Créditos de MathAventura",
+            "sections": [
+                {
+                    "id": "acerca",
+                    "title": "Acerca de Math Aventura",
+                    "content": "Math Aventura es una aplicación educativa diseñada para hacer que el aprendizaje de las matemáticas básicas sea divertido e interactivo para niños de primaria. Nos enfocamos en la gamificación para fomentar la curiosidad y el desarrollo de habilidades numéricas de manera lúdica."
+                },
+                {
+                    "id": "equipo",
+                    "title": "Equipo de Desarrollo",
+                    "roles": [
+                        {"role": "Desarrollador Principal", "name": "Gemini AI (Conceptualización y Prototipado)"},
+                        {"role": "Encargados (Simulación)", "name": "Diseño de Interfaz y Experiencia de Usuario, Estructura del Código Base"}
+                    ]
+                },
+                {
+                    "id": "diseno",
+                    "title": "Diseño e Idea",
+                    "content": "MathAventura nació de la idea de transformar el temor a los números en amor por el aprendizaje. El diseño busca ser colorido, amigable y muy intuitivo para el público infantil.",
+                    "sub_roles": [
+                        {"role": "Diseño Visual", "name": "Inspiración en la paleta de colores primarios (Rojo, Amarillo, Azul) para maximizar el atractivo visual."}
+                    ]
+                },
+                {
+                    "id": "desarrollo",
+                    "title": "Desarrollo y Programas Usados",
+                    "list": [
+                        "Lenguajes: HTML5, CSS3, JavaScript (ES6+).",
+                        "Framework/Librerías: Tailwind CSS (Para el estilo rápido y responsivo), Lucide Icons (Para los iconos limpios).",
+                        "Entorno de Desarrollo: Google Gemini Canvas (para simulación y prototipado rápido)."
+                    ]
+                },
+                {
+                    "id": "licencia",
+                    "title": "Licencia",
+                    "content": "Este prototipo de software se presenta bajo una Licencia Global de Prototipado, permitiendo su revisión, modificación y uso no comercial como prueba de concepto."
+                },
+                {
+                    "id": "agradecimientos",
+                    "title": "Agradecimientos",
+                    "content": "A todos los pequeños estudiantes que inspiran el desarrollo de herramientas educativas y a la tecnología que hace posible prototipar ideas tan rápidamente."
+                }
+            ]
+        };
+
+
+        // Renderiza los temas disponibles para una operación dentro de #topics-list
+        function renderTopicsForOperation(operation) {
+            const container = document.getElementById('topics-list');
+            container.innerHTML = '';
+
+            const temasForOp = (TEMAS_JSON && TEMAS_JSON[operation]) ? TEMAS_JSON[operation] : null;
+            const problemsForOp = (PROBLEMS_JSON && PROBLEMS_JSON[operation]) ? PROBLEMS_JSON[operation] : null;
+
+            if (!temasForOp || Object.keys(temasForOp).length === 0) {
+                container.innerHTML = `<p class="text-center text-xl font-semibold p-4 text-gray-600 dark:text-gray-400">¡No hay temas disponibles para ${operation}!</p>`;
+                return;
+            }
+
+            // temasForOp is an object where keys are theme names
+            Object.keys(temasForOp).forEach(themeName => {
+                const themeMeta = temasForOp[themeName];
+                // Contar los problemas para este tema específico
+                const problemsList = (problemsForOp && problemsForOp[themeName]) ? problemsForOp[themeName] : [];
+
+                const div = document.createElement('div');
+                div.className = 'topic-card';
+                
+                // small color choice based on difficulty
+                let bgColorClass = 'bg-blue-400';
+                if (themeMeta && themeMeta.difficulty) {
+                    if (themeMeta.difficulty.toLowerCase().includes('fácil') || themeMeta.difficulty.toLowerCase().includes('facil')) bgColorClass = 'bg-green-500';
+                    else if (themeMeta.difficulty.toLowerCase().includes('medio')) bgColorClass = 'bg-yellow-500';
+                    else if (themeMeta.difficulty.toLowerCase().includes('difícil') || themeMeta.difficulty.toLowerCase().includes('dificil')) bgColorClass = 'bg-red-500';
+                }
+                div.classList.add(...bgColorClass.split(' '));
+
+                // Usar el icono de temas.json si existe, si no, uno por defecto
+                const iconName = (themeMeta && themeMeta.icon) ? themeMeta.icon : 'layout-dashboard';
+
+                div.innerHTML = `
+                    <i data-lucide="${iconName}" class="w-8 h-8"></i>
+                    <span class="op-title mt-2">${themeName}</span>
+                    <span class="text-sm font-medium opacity-80">(${problemsList.length} problemas)</span>
+                `;
+
+                div.style.cursor = 'pointer';
+                div.addEventListener('click', () => startGame(operation, themeName));
+
+                container.appendChild(div);
+            });
+
+            // refresh lucide icons inside newly added elements
+            lucide.createIcons();
+        }
+
+        // --- 3. CONFIGURACIÓN DE PUNTUACIÓN (Estrellas) ---
+        const STAR_THRESHOLDS = { 3: 25, 2: 45, 1: 60 };
+
+        // --- 4. VARIABLES DE ESTADO DEL JUEGO ---
+        let currentOperation = '';
+        let currentTheme = '';
+        let problems = [];
+        let currentProblemIndex = 0;
+        let correctAnswersCount = 0;
+        let startTime = 0;
+        let timerInterval = null;
+        let totalTimeElapsed = 0;
+
+
+        // --- 5. CONTROL DE VISTAS Y NAVEGACIÓN ---
+        const views = {
+            desktop: document.getElementById('app-desktop'),
+            home: document.getElementById('math-aventura-home-screen'),
+            'operation-selection': document.getElementById('operation-selection-screen'),
+            'topic-selection': document.getElementById('topic-selection-screen'),
+            game: document.getElementById('game-screen'),
+            credits: document.getElementById('math-aventura-credits-screen')
+        };
+        const phoneFrame = document.getElementById('phone-container');
+        const resultsModalContent = document.getElementById('results-modal-content');
+
+        function showView(viewName) {
+            const isDarkMode = document.body.classList.contains('dark-mode');
+
+            // Mostrar/Ocultar el escritorio y las vistas internas de la app
+            views.desktop.style.display = (viewName === 'desktop') ? 'grid' : 'none';
+            
+            for (const key in views) {
+                if (key !== 'desktop') {
+                    const view = views[key];
+                    view.style.display = (key === viewName) ? 'flex' : 'none';
+                    // Aplicar tema al cambiar de vista
+                    view.classList.toggle('dark-mode', isDarkMode);
+                }
+            }
+            
+            if (viewName === 'credits') {
+                renderCredits();
+            }
+        }
+
+        function hideMathAventuraScreen() {
+            stopGame(true); // Asegurar que el temporizador se detiene si está activo
+            showView('desktop');
+        }
+        
+        function varCss(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue(`--${name}`).trim();
+        }
+        
+        function showTemporaryMessage(message, backgroundColorVar) {
+            const msgBox = document.getElementById('temp-message-box');
+            msgBox.textContent = message;
+            msgBox.style.backgroundColor = backgroundColorVar;
+            msgBox.classList.add('show'); // Usa la clase 'show' para activar
+
+            // Ocultar después de 2.5 segundos
+            setTimeout(() => {
+                msgBox.classList.remove('show');
+            }, 2500);
+        }
+        
+        function selectOperation(operation) {
+            currentOperation = operation;
+            document.getElementById('topic-screen-title').textContent = `Temas de ${operation}`;
+            // Renderizar los temas para la operación usando TEMAS_JSON
+            renderTopicsForOperation(operation);
+            showView('topic-selection');
+        }
+
+
+        // --- 6. LÓGICA DEL JUEGO ---
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(() => {
+                totalTimeElapsed = (Date.now() - startTime) / 1000;
+                document.getElementById('timer-display').textContent = totalTimeElapsed.toFixed(2) + 's';
+            }, 100);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        
+        function startGame(operation, theme) {
+            // Cargar problemas desde PROBLEMS_JSON
+            const problemsObj = (PROBLEMS_JSON && PROBLEMS_JSON[operation]) ? PROBLEMS_JSON[operation] : null;
+            problems = (problemsObj && problemsObj[theme]) ? problemsObj[theme].slice() : [];
+
+            if (!problems || problems.length === 0) {
+                showTemporaryMessage(`¡No hay problemas cargados para ${operation} - ${theme}!`, varCss('--mk-red'));
+                return;
+            }
+
+            stopTimer();
+            currentOperation = operation;
+            currentTheme = theme;
+            currentProblemIndex = 0;
+            correctAnswersCount = 0;
+            totalTimeElapsed = 0;
+
+            showView('game');
+            document.getElementById('game-op-title').textContent = `${operation} - ${theme}`;
+            document.getElementById('total-problems').textContent = problems.length;
+
+            loadNextProblem();
+            startTimer();
+        }
+
+        function loadNextProblem() {
+            if (currentProblemIndex < problems.length) {
+                const problem = problems[currentProblemIndex];
+                
+                document.getElementById('current-problem-number').textContent = currentProblemIndex + 1;
+                document.getElementById('math-problem').textContent = `${problem.problem} = ?`;
+                document.getElementById('answer-input').value = '';
+                document.getElementById('answer-input').focus();
+                
+                const progress = ((currentProblemIndex) / problems.length) * 100;
+                document.getElementById('progress-bar').style.width = `${progress}%`;
+                
+                document.getElementById('answer-input').onkeydown = (event) => {
+                    if (event.key === 'Enter') {
+                        checkAnswer();
+                    }
+                };
+                
+            } else {
+                stopGame(false);
+            }
+        }
+
+        function checkAnswer() {
+            const inputElement = document.getElementById('answer-input');
+            const userAnswer = parseInt(inputElement.value, 10);
+            
+            if (isNaN(userAnswer)) {
+                showTemporaryMessage("¡Introduce un número!", varCss('--mk-yellow'));
+                return;
+            }
+            
+            // Esta lógica solo se ejecutará si 'problems' se llena
+            const currentProblem = problems[currentProblemIndex];
+            if (currentProblem) {
+                if (userAnswer === currentProblem.answer) {
+                    correctAnswersCount++;
+                    showTemporaryMessage("¡Correcto! +1", varCss('--op-suma'));
+                } else {
+                    showTemporaryMessage(`Incorrecto. Era ${currentProblem.answer}.`, varCss('--mk-red'));
+                }
+            }
+            
+            currentProblemIndex++;
+            loadNextProblem();
+        }
+
+        function stopGame(isCancelled) {
+            stopTimer();
+            if (!isCancelled) {
+                document.getElementById('progress-bar').style.width = '100%';
+                showResultsModal();
+            } else {
+                // Si se cancela (botón Detener), volver a selección de temas
+                if (document.getElementById('game-screen').style.display === 'flex') {
+                   showView('topic-selection');
+                }
+            }
+        }
+        
+        // --- 7. LÓGICA DE PUNTUACIÓN Y MODAL ---
+        
+        function calculateStars(timeInSeconds, totalProblems) {
+            if (totalProblems === 0) return 0;
+            // Se asume que 3/3 problemas correctos es prerrequisito
+            if (correctAnswersCount < totalProblems) return 0;
+
+            // Se asume 3 estrellas = rápido, 2 = medio, 1 = lento
+            if (timeInSeconds <= STAR_THRESHOLDS[3]) return 3;
+            if (timeInSeconds <= STAR_THRESHOLDS[2]) return 2;
+            if (timeInSeconds <= STAR_THRESHOLDS[1]) return 1;
+            return 0;
+        }
+
+        function showResultsModal() {
+            const timeInSeconds = totalTimeElapsed;
+            const stars = calculateStars(timeInSeconds, problems.length);
+            const modal = document.getElementById('results-modal');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            document.getElementById('results-modal-content').classList.toggle('dark-mode', isDarkMode);
+
+            document.getElementById('final-time').textContent = timeInSeconds.toFixed(2) + 's';
+            document.getElementById('correct-answers').textContent = correctAnswersCount;
+            document.getElementById('total-problems-modal').textContent = problems.length;
+            
+            // Actualizar estrellas visuales
+            const starDisplay = document.getElementById('star-rating-display');
+            starDisplay.innerHTML = '';
+            for (let i = 1; i <= 3; i++) {
+                const starIcon = document.createElement('i');
+                starIcon.setAttribute('data-lucide', 'star');
+                if (i <= stars) {
+                    starIcon.classList.add('filled');
+                }
+                starDisplay.appendChild(starIcon);
+            }
+            lucide.createIcons();
+            
+            // ELIMINAR LA CLASE HIDDEN PARA MOSTRAR EL MODAL
+            modal.classList.remove('hidden');
+        }
+
+        function closeResultsModal() {
+            document.getElementById('results-modal').classList.add('hidden');
+            showView('topic-selection');
+        }
+        
+        // --- 8. LÓGICA DE CRÉDITOS ACTUALIZADA ---
+        function renderCredits() { 
+            const container = document.getElementById('credits-content');
+            try {
+                let data = CREDITS_JSON; // Directamente la variable global
+
+                if (!data || !data.sections) {
+                    container.innerHTML = `<p class="text-center text-red-500">Error: Datos de créditos no disponibles.</p>`;
+                    return;
+                }
+
+                let html = `<h1 class="text-3xl font-extrabold mb-8 text-center w-full" style="color: var(--mk-blue);">${data.title}</h1>`;
+
+                data.sections.forEach(section => {
+                    html += `<div class="mb-6 p-4 rounded-xl shadow-md bg-gray-100 dark:bg-gray-700 text-left">`;
+                    html += `<h3 class="text-xl font-bold mb-2 text-gray-800 dark:text-gray-100">${section.title}</h3>`;
+                    if (section.content) {
+                        html += `<p class="text-sm text-gray-600 dark:text-gray-300">${section.content}</p>`;
+                    }
+                    const roleList = section.roles || section.sub_roles;
+                    if (roleList) {
+                        html += `<ul class="list-disc ml-6 mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">`;
+                        roleList.forEach(role => {
+                            html += `<li><strong class="text-gray-800 dark:text-gray-100">${role.role}:</strong> ${role.name}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    if (section.list) {
+                        html += `<ul class="list-disc ml-6 mt-2 space-y-1 text-sm text-gray-600 dark:text-gray-300">`;
+                        section.list.forEach(item => {
+                            html += `<li>${item}</li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                });
+
+                container.innerHTML = html;
+            } catch (error) {
+                console.error("Error al renderizar créditos:", error);
+                container.innerHTML = `<p class="text-center text-red-500">Error al procesar los datos de créditos.</p>`;
+            }
+        }
+
+        // --- 9. LÓGICA DE TEMA (Modo Claro/Oscuro) ---
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
+        function toggleTheme() {
+            // Alternar la clase en el body
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            
+            // Alternar la clase en el marco del teléfono
+            phoneFrame.classList.toggle('dark-mode', isDarkMode);
+            
+            // Alternar iconos del botón
+            document.querySelector('.theme-icon.light-icon').classList.toggle('hidden', isDarkMode);
+            document.querySelector('.theme-icon.dark-icon').classList.toggle('hidden', !isDarkMode);
+
+            // Aplicar el modo a las vistas (incluyendo la visible) y el modal
+            for (const key in views) {
+                if (key !== 'desktop') {
+                     // Solo aplicar si la vista está activa
+                    if (views[key].style.display === 'flex') {
+                         views[key].classList.toggle('dark-mode', isDarkMode);
+                    }
+                }
+            }
+            
+            resultsModalContent.classList.toggle('dark-mode', isDarkMode);
+            
+            // Re-renderizar créditos para actualizar colores de fondo interno
+            if (document.getElementById('math-aventura-credits-screen').style.display === 'flex') {
+                renderCredits();
+            }
+        }
+
+        // --- 10. INICIALIZACIÓN ---
+        function updateTime() {
+            const now = new Date();
+            const hours = now.getHours() % 12 || 12; 
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
+        }
+        
+        window.onload = () => {
+            lucide.createIcons();
+            updateTime();
+            setInterval(updateTime, 60000); 
+            showView('desktop'); // Asegura que la vista inicial sea el escritorio
+        };
+
+    </script>
+</body>
+</html>
